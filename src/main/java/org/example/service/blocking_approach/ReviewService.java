@@ -1,4 +1,4 @@
-package org.example.blocking_approach;
+package org.example.service.blocking_approach;
 
 import org.example.domain.Review;
 

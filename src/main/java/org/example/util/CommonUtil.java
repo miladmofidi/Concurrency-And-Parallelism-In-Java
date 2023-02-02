@@ -23,6 +23,7 @@ public class CommonUtil {
     }
 
     public static void startTimer(){
+        stopWatchReset();
         stopWatch.start();
     }
 

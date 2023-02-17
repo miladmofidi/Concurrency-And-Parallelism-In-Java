@@ -115,11 +115,45 @@ public class ProductServiceUsingCompletableFuture
                             return productInfo;
                         });
         CompletableFuture<Review> reviewCf =
-                CompletableFuture.supplyAsync(() -> reviewService.retrieveReviews(productId));
-        Product product = productInfoCf.thenCombine(reviewCf,
-                                                    (productInfo, review) -> new Product(
-                                                            productId, productInfo,
-                                                            review))
+                CompletableFuture.supplyAsync(() -> reviewService.retrieveReviews(productId))
+                        .exceptionally( exception -> {
+                            log("Handled the exception in reviewService:  "+ exception.getMessage());
+                            return Review.builder().noOfReviews(0).overallRating(0.0).build();
+                        });
+
+        Product product = productInfoCf
+                .thenCombine(reviewCf,(productInfo, review) -> new Product(productId, productInfo,review))
+                .whenComplete((product1, exception)-> {
+                    log("Inside whenComplete: " +product1+ "and the exception is: "+ exception);
+                })
+                .join(); //join() will blocking the main thread until their response is ready
+        stopWatch.stop();
+        log("Total Time Taken : " + stopWatch.getTime());
+        return product;
+    }
+
+    public Product retrieveProductDetailsWithInventory_approach2_withBetterPerformance_exceptionally(String productId)
+    {
+        stopWatch.start();
+
+        CompletableFuture<ProductInfo> productInfoCf =
+                CompletableFuture.supplyAsync(() -> productInfoService.retrieveProductInfo(productId)).
+                        thenApply(productInfo -> {
+                            productInfo.setProductOptions(updateInventory_approach2_withBetterPerformance_exceptionally(productInfo));
+                            return productInfo;
+                        });
+        CompletableFuture<Review> reviewCf =
+                CompletableFuture.supplyAsync(() -> reviewService.retrieveReviews(productId))
+                        .exceptionally( exception -> {
+                            log("Handled the exception in reviewService:  "+ exception.getMessage());
+                            return Review.builder().noOfReviews(0).overallRating(0.0).build();
+                        });
+
+        Product product = productInfoCf
+                .thenCombine(reviewCf,(productInfo, review) -> new Product(productId, productInfo,review))
+                .whenComplete((product1, exception)-> {
+                    log("Inside whenComplete: " +product1+ " and the exception is: "+ exception);
+                })
                 .join(); //join() will blocking the main thread until their response is ready
         stopWatch.stop();
         log("Total Time Taken : " + stopWatch.getTime());
@@ -152,6 +186,26 @@ public class ProductServiceUsingCompletableFuture
                 .collect(Collectors.toList());
 
         return productOptions.stream().map(productOptionCompletableFuture -> productOptionCompletableFuture.join()).collect(
+                Collectors.toList());
+    }
+
+    private List<ProductOption> updateInventory_approach2_withBetterPerformance_exceptionally(ProductInfo productInfo)
+    {
+        List<CompletableFuture<ProductOption> > productOptions = productInfo.getProductOptions().stream()
+                .map(productOption -> {
+                    return CompletableFuture.supplyAsync( () -> inventoryService.retrieveInventory(productOption))
+                            .exceptionally( exception -> {
+                                log("Handled the exception in updateInventory call:  "+ exception.getMessage());
+                                return Inventory.builder().count(1).build();
+                            })
+                            .thenApply(inventory -> {
+                                productOption.setInventory(inventory);
+                                return productOption;
+                            });
+                })
+                .collect(Collectors.toList());
+
+        return productOptions.stream().map(CompletableFuture::join).collect(
                 Collectors.toList());
     }
 

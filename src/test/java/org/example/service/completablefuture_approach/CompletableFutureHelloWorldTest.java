@@ -33,9 +33,15 @@ class CompletableFutureHelloWorldTest
         assertEquals("HELLO WORLD!" , helloWorld);
     }
     @Test
-    void helloWorldWith3AsyncCall()
+    void helloWorld_with_3_async_calls()
     {
-        String helloWorld = completableFutureHelloWorld.helloWorldWith3AsyncCall();
+        String helloWorld = completableFutureHelloWorld.helloWorld_with_3_async_calls();
+        assertEquals("HELLO WORLD! HI COMPLETABLEFUTURE!" , helloWorld);
+    }
+    @Test
+    void helloWorld_with_3_async_calls_with_log()
+    {
+        String helloWorld = completableFutureHelloWorld.helloWorld_with_3_async_calls_with_log();
         assertEquals("HELLO WORLD! HI COMPLETABLEFUTURE!" , helloWorld);
     }
     @Test
@@ -60,5 +66,12 @@ class CompletableFutureHelloWorldTest
         CompletableFuture<String> completableFuture = completableFutureHelloWorld.helloWorld_withSize();
         completableFuture.thenAccept(s -> assertEquals("11 - HELLO WORLD" , s))
                 .join();
+    }
+
+    @Test
+    void helloWorld_with_3_async_calls_with_custom_threadPool(){
+        String helloWorld = completableFutureHelloWorld.helloWorld_with_3_async_calls_with_custom_threadPool();
+        assertEquals("HELLO WORLD! HI COMPLETABLEFUTURE!" , helloWorld);
+
     }
 }
